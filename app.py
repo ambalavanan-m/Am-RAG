@@ -59,7 +59,7 @@ UPLOAD_DIR = "./uploads"
 DB_DIR = "./faiss_index"
 
 # Hardcoded OpenRouter API Key
-os.environ["OPENAI_API_KEY"] = "xxxxxxxxxx"
+os.environ["OPENAI_API_KEY"] = "**************"
 os.environ["OPENAI_API_BASE"] = "https://openrouter.ai/api/v1"
 
 # Ensure our local storage folders exist
@@ -114,15 +114,18 @@ with st.sidebar:
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=150)
                 chunks = text_splitter.split_documents(all_documents)
 
-                st.write("🧠 Generating secure local embeddings (FAISS)...")
-                embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-                
-                vector_db = FAISS.from_documents(chunks, embeddings)
-                vector_db.save_local(DB_DIR)
-                
-                status.update(label="Knowledge Base Built Successfully!", state="complete", expanded=False)
-                
-            st.toast(f"Successfully processed {len(uploaded_files)} file(s)!", icon="✅")
+                if not chunks:
+                    status.update(label="Indexing failed: No text extracted!", state="error", expanded=True)
+                    st.error("No readable text content could be extracted from the uploaded document(s). Please verify the files contain extractable text and try again.")
+                else:
+                    st.write("🧠 Generating secure local embeddings (FAISS)...")
+                    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+                    
+                    vector_db = FAISS.from_documents(chunks, embeddings)
+                    vector_db.save_local(DB_DIR)
+                    
+                    status.update(label="Knowledge Base Built Successfully!", state="complete", expanded=False)
+                    st.toast(f"Successfully processed {len(uploaded_files)} file(s)!", icon="✅")
         else:
             st.warning("Please select files to upload first.")
 
